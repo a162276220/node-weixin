@@ -1,6 +1,7 @@
 import express from 'express';
 import UserModel from '../models/user.js';
 import { nextUserId } from '../models/id.js';
+import config from '../config/index.js';
 
 const router = express.Router();
 const MAX_NAME_LENGTH = 20;
@@ -20,18 +21,25 @@ router.get('/login', async (req, res) => {
 	}
 
 	try {
-		const id = await nextUserId();
-		const avatar = `${Math.ceil(Math.random() * AVATAR_COUNT)}.jpg`;
-		await UserModel.create({ name: username, id, avatar });
-		req.session.user_id = id;
+		// 同名视为同一身份：老用户回来复用原 id / avatar，避免历史消息归属错乱
+		let user = await UserModel.findOne({ name: username }, '-_id -__v').lean();
+
+		if (!user) {
+			const id = await nextUserId();
+			const avatar = `${Math.ceil(Math.random() * AVATAR_COUNT)}.jpg`;
+			await UserModel.create({ name: username, id, avatar });
+			user = { name: username, id, avatar };
+		}
+
+		req.session.user_id = user.id;
 		res.send({
 			status: 200,
-			message: '注册成功',
-			user_info: { name: username, id, avatar },
+			message: '登录成功',
+			user_info: user,
 		});
 	} catch (err) {
-		console.error('[user] 注册失败:', err);
-		res.send({ status: 0, message: '注册失败' });
+		console.error('[user] 登录失败:', err);
+		res.send({ status: 0, message: '登录失败' });
 	}
 });
 
@@ -55,6 +63,19 @@ router.get('/info', async (req, res) => {
 	} catch (err) {
 		console.error('[user] 获取用户信息失败:', err);
 		res.send({ status: 0, message: '获取用户信息失败' });
+	}
+});
+
+// 退出登录：销毁服务端 session 并清除 cookie（cookie 是 HttpOnly，前端无法自行删除）
+router.get('/logout', (req, res) => {
+	const done = () => {
+		res.clearCookie(config.sessionName);
+		res.send({ status: 200, message: '已退出登录' });
+	};
+	if (req.session?.destroy) {
+		req.session.destroy(() => done());
+	} else {
+		done();
 	}
 });
 
