@@ -14,7 +14,8 @@
     "init:counters": "node scripts/init-counters.js",
     "pm2:start": "pm2 start index.js --name node-weixin",
     "pm2:stop": "pm2 stop node-weixin",
-    "pm2:restart": "pm2 restart node-weixin"
+    "pm2:restart": "pm2 restart node-weixin",
+    "test": "node tests/smoke.mjs"
   },
   "keywords": [
     "node",
@@ -31,5 +32,8 @@
     "express-session": "^1.19.0",
     "mongoose": "^9.12.1",
     "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
   }
 }
