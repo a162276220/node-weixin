@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      write_lockfile:
+        description: '重新生成并提交 package-lock.json'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: 端到端冒烟
+    # 固定版本：ubuntu-latest 自 2026-10-19 起迁移到 Ubuntu 26
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      MONGO_URI: mongodb://127.0.0.1:27017/weixin_ci
+      NODE_ENV: test
+      SESSION_SECRET: ci-only-secret-not-for-production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: 安装依赖
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            echo "::notice::未发现 package-lock.json，本次使用 npm install"
+            npm install --no-audit --no-fund
+          fi
+
+      - name: 依赖审计（仅提示，不拦截）
+        continue-on-error: true
+        run: npm audit --omit=dev || true
+
+      - name: 端到端冒烟
+        run: npm test
+
+      - name: 生产环境缺密钥必须启动失败
+        run: |
+          set +e
+          output=$(NODE_ENV=production SESSION_SECRET= node index.js 2>&1)
+          code=$?
+          set -e
+          echo "$output" | head -5
+          if [ "$code" -eq 0 ]; then
+            echo "::error::生产环境未设置 SESSION_SECRET 却启动成功，密钥守卫失效"
+            exit 1
+          fi
+          echo "OK: 缺少 SESSION_SECRET 时按预期拒绝启动"
+
+  lockfile:
+    name: 生成 package-lock.json
+    # 只手动触发：Actions → CI → Run workflow → 勾选 write_lockfile
+    if: github.event_name == 'workflow_dispatch' && inputs.write_lockfile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: 生成 lockfile
+        run: npm install --package-lock-only --no-audit --no-fund
+
+      - name: 提交（仅在有变化时）
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "::notice::package-lock.json 无变化，跳过提交"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: 生成 package-lock.json 锁定依赖版本"
+          git push
