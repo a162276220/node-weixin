@@ -87,6 +87,16 @@ async function main() {
 			`first=${login.user_info.id} second=${second.user_info.id}`
 		);
 
+		const again = await (
+			await fetch(`${BASE}/user/login?username=${encodeURIComponent('胡萝卜')}`)
+		).json();
+		check(
+			'同名登录复用原身份',
+			again.user_info.id === login.user_info.id &&
+				again.user_info.avatar === login.user_info.avatar,
+			`first=${login.user_info.id} again=${again.user_info.id}`
+		);
+
 		const all = await (await fetch(`${BASE}/user/all?limit=10&offset=0`)).json();
 		check('用户列表 /user/all', all.status === 200 && all.users.length === 2, `count=${all.users?.length}`);
 
@@ -152,6 +162,12 @@ async function main() {
 				preflight.headers.get('access-control-allow-origin') === 'http://localhost:8080',
 			`http=${preflight.status} acao=${preflight.headers.get('access-control-allow-origin')}`
 		);
+
+		const logout = await (await fetch(`${BASE}/user/logout`, { headers: { cookie } })).json();
+		check('退出登录 /user/logout', logout.status === 200, JSON.stringify(logout));
+
+		const afterLogout = await (await fetch(`${BASE}/user/info`, { headers: { cookie } })).json();
+		check('退出后会话失效', afterLogout.status === 0, JSON.stringify(afterLogout));
 	} finally {
 		child.kill();
 		await new Promise(r => setTimeout(r, 800));
