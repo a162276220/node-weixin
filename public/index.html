@@ -3,105 +3,101 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-	<meta name="theme-color" content="#07c160" />
-	<meta name="description" content="多人在线聊天室" />
-	<title>聊天室</title>
-	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect x='3' y='7' width='30' height='24' rx='9' fill='%2307c160'/%3E%3Crect x='22' y='18' width='23' height='18' rx='7' fill='%2310aeff'/%3E%3Ccircle cx='11' cy='18' r='2.4' fill='%23fff'/%3E%3Ccircle cx='19' cy='18' r='2.4' fill='%23fff'/%3E%3Ccircle cx='30' cy='26' r='1.9' fill='%23fff'/%3E%3Ccircle cx='37' cy='26' r='1.9' fill='%23fff'/%3E%3C/svg%3E" />
+	<meta name="theme-color" content="#000000" />
+	<meta name="description" content="多人在线聊天室 · 终端版" />
+	<title>CHAT · 多人在线聊天室</title>
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ctext x='5' y='22' font-family='monospace' font-size='16' fill='%234fd6ff'%3E%3E_%3C/text%3E%3C/svg%3E" />
 	<link rel="stylesheet" href="/app.css" />
 </head>
 <body>
-	<!-- 登录 -->
-	<section id="login-view" class="login">
-		<div class="login-card">
-			<div class="login-logo" aria-hidden="true">
-				<svg viewBox="0 0 48 48" width="44" height="44" fill="none">
-					<rect x="3" y="7" width="30" height="24" rx="9" fill="#07c160" />
-					<path d="M11 27l-1 6 7-4" fill="#07c160" />
-					<circle cx="11" cy="18" r="2.4" fill="#fff" />
-					<circle cx="19" cy="18" r="2.4" fill="#fff" />
-					<circle cx="26" cy="18" r="2.4" fill="#fff" />
-					<rect x="22" y="18" width="23" height="18" rx="7" fill="#10aeff" />
-					<path d="M39 33l1 5-6-3" fill="#10aeff" />
-					<circle cx="30" cy="26" r="1.9" fill="#fff" />
-					<circle cx="37" cy="26" r="1.9" fill="#fff" />
-				</svg>
+	<div class="scanlines" aria-hidden="true"></div>
+
+	<!-- 登录 / 欢迎画面 -->
+	<section id="login-view" class="screen login">
+		<div class="login-inner">
+			<p class="bar-text">
+				欢迎光临 <b class="hl">CHAT</b>（目前共有 <b id="online-count" class="hl2">--</b> 人上线）
+			</p>
+			<p class="bar-text dim">
+				<span class="caret">&gt;</span> 服务状态：<span id="login-status">正在连接服务器…</span>
+			</p>
+
+			<pre id="login-banner" class="banner" aria-hidden="true"></pre>
+
+			<div class="center-block">
+				<p class="welcome">欢 迎 光 临</p>
+				<p class="dim">多人在线聊天室 · 终端复古版</p>
+				<p class="dim small">Welcome to CHAT ROOM</p>
+				<p class="dim small dots">────────────── ◆ ──────────────</p>
+				<p class="dim small">Socket.IO 实时广播 · 消息最大 100 字</p>
 			</div>
-			<h1 class="login-title">多人在线聊天室</h1>
-			<p class="login-sub">输入一个昵称，立刻开始聊天</p>
 
 			<form id="login-form" class="login-form" autocomplete="off">
 				<label class="field">
-					<input id="login-name" type="text" name="username" maxlength="20"
-						placeholder="你的昵称（最多 20 字）" autocomplete="off" required />
+					<span class="label">请输入代号（试用请输入 <b class="hl2">guest</b>）：</span>
+					<span class="input-row">
+						<span class="caret">&gt;</span>
+						<input id="login-name" type="text" name="username" maxlength="20"
+							placeholder="hu" autocomplete="off" required />
+						<button id="login-btn" type="submit" class="btn">[ 进入 ]</button>
+					</span>
 				</label>
-				<button id="login-btn" type="submit" class="btn-primary">进入聊天室</button>
-				<p id="login-error" class="login-error" role="alert" hidden></p>
+				<p id="login-error" class="line err" role="alert" hidden></p>
 			</form>
 
-			<p class="login-tip">
-				<span class="dot" id="login-dot"></span>
-				<span id="login-status">正在检查连接…</span>
-			</p>
+			<ul class="tips dim small">
+				<li>· 代号即身份，同名会回到同一个账号；新代号自动注册</li>
+				<li>· 进入后可用 /help 查看命令，↑↓ 翻历史输入</li>
+			</ul>
+		</div>
+
+		<div class="bar bar-bottom login-bar">
+			<span>CHAT 2.0 · Node · Socket.IO · 终端复古版</span>
+			<span class="spacer"></span>
+			<span>按 Enter 进入</span>
 		</div>
 	</section>
 
-	<!-- 主界面 -->
-	<section id="chat-view" class="layout" hidden>
-		<aside class="sidebar" id="sidebar">
-			<div class="me-card">
-				<div class="avatar avatar-lg" id="me-avatar">我</div>
-				<div class="me-meta">
-					<p class="me-name" id="me-name">—</p>
-					<p class="me-id" id="me-id">#—</p>
-				</div>
-			</div>
+	<!-- 聊天主界面 -->
+	<section id="chat-view" class="screen chat" hidden>
+		<header class="bar bar-top">
+			<span class="brand">≡ CHAT</span>
+			<span class="sep">·</span>
+			<span class="conn" id="conn-status" data-state="connecting">连接中</span>
+			<span class="sep">·</span>
+			<span class="dim">在线 <b id="member-count" class="hl2">0</b> 人</span>
+			<span class="spacer"></span>
+			<span class="dim" id="me-tag">代号: --</span>
+			<button id="drawer-btn" class="btn-ico only-mobile" type="button" aria-label="成员列表">≡</button>
+		</header>
 
-			<div class="side-section">
-				<div class="side-head">
-					<span>成员</span>
-					<span class="pill" id="member-count">0</span>
+		<div class="body">
+			<main class="stream-wrap">
+				<div class="stream" id="messages">
+					<div class="sys" id="msg-loading">正在载入聊天记录…</div>
 				</div>
+			</main>
+
+			<aside class="who" id="sidebar">
+				<p class="who-me" id="who-me">代号: --</p>
+				<p class="who-head">── 在线 ──</p>
 				<ul class="member-list" id="member-list"></ul>
-			</div>
+				<button id="logout-btn" class="btn-link" type="button">[ 退出登录 ]</button>
+			</aside>
+		</div>
 
-			<button id="logout-btn" class="btn-ghost" type="button">退出登录</button>
-		</aside>
+		<footer class="composer">
+			<span class="prompt" id="composer-prompt">guest&gt;</span>
+			<textarea id="input" rows="1" maxlength="100" placeholder="说点什么…"></textarea>
+			<span class="counter" id="counter">0/100</span>
+			<button id="send-btn" class="btn" type="button" disabled>[ 发送 ]</button>
+		</footer>
 
-		<main class="main">
-			<header class="topbar">
-				<button id="drawer-btn" class="icon-btn only-mobile" type="button" aria-label="成员">
-					<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-						<path d="M4 7h16M4 12h16M4 17h16" />
-					</svg>
-				</button>
-				<div class="topbar-title">
-					<span>群聊</span>
-					<span class="conn" id="conn-status" data-state="connecting">连接中</span>
-				</div>
-				<button id="refresh-btn" class="icon-btn" type="button" aria-label="刷新">
-					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-						<path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" />
-					</svg>
-				</button>
-			</header>
-
-			<div class="messages" id="messages">
-				<div class="msg-loading" id="msg-loading">正在加载消息…</div>
-			</div>
-
-			<footer class="composer">
-				<div class="composer-box">
-					<textarea id="input" rows="1" maxlength="100" placeholder="说点什么…"></textarea>
-					<span class="counter" id="counter">0/100</span>
-				</div>
-				<button id="send-btn" class="btn-send" type="button" disabled>
-					<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-						<path d="M3.4 20.4l17.5-7.5c.8-.35.8-1.45 0-1.8L3.4 3.6c-.65-.28-1.36.2-1.36.9L2 9.1c0 .5.37.93.87.99L17 12 2.87 13.9c-.5.07-.87.5-.87 1l.04 4.6c0 .7.71 1.18 1.36.9z" />
-					</svg>
-					<span>发送</span>
-				</button>
-			</footer>
-		</main>
+		<div class="bar bar-bottom">
+			<span>Enter 发送 · Shift+Enter 换行 · ↑↓ 历史 · /help 命令 · Tab 成员</span>
+			<span class="spacer"></span>
+			<span id="clock">--:--</span>
+		</div>
 
 		<div class="drawer-mask" id="drawer-mask" hidden></div>
 	</section>
