@@ -1,24 +1,19 @@
-'use strict';
-
 import mongoose from 'mongoose';
-import config from 'config-lite';
-mongoose.connect(config.url, {server:{auto_reconnect:true}});
-mongoose.Promise = global.Promise;
+import config from '../config/index.js';
 
-const db = mongoose.connection;
+export async function connectMongo() {
+	mongoose.connection.on('error', err => {
+		console.error('[db] 连接异常:', err.message);
+	});
+	mongoose.connection.on('disconnected', () => {
+		console.warn('[db] 连接断开，驱动会自动重连');
+	});
 
-db.once('open' ,() => {
-	console.log('连接数据成功')
-})
+	await mongoose.connect(config.mongoUrl, {
+		serverSelectionTimeoutMS: 5000,
+	});
+	console.log('[db] 已连接', config.mongoUrl.replace(/\/\/.*@/, '//***@'));
+	return mongoose.connection;
+}
 
-db.on('error', function(error) {
-    console.error('Error in MongoDb connection: ' + error);
-    mongoose.disconnect();
-});
-
-db.on('close', function() {
-    console.log('数据库断开，重新连接数据库');
-    mongoose.connect(config.url, {server:{auto_reconnect:true}});
-});
-
-export default db;
+export default mongoose.connection;

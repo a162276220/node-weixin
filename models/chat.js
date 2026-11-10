@@ -1,21 +1,16 @@
-'use strict';
+import mongoose from 'mongoose';
 
-import mongoose from 'mongoose'
-
-const Schema = mongoose.Schema;
-
-const chatSchema = new Schema({
+const chatSchema = new mongoose.Schema({
 	id: Number,
 	username: String,
 	user_id: Number,
 	time: String,
 	avatar: String,
 	content: String,
-})
+});
 
-chatSchema.index({id: 1});
+chatSchema.index({ id: 1 });
 
-const Chat = mongoose.model('Chat', chatSchema)
+const Chat = mongoose.models.Chat || mongoose.model('Chat', chatSchema);
 
-
-export default Chat
+export default Chat;
