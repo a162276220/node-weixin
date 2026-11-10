@@ -1,16 +1,13 @@
-'use strict';
+import mongoose from 'mongoose';
 
-import mongoose from 'mongoose'
-const Schema = mongoose.Schema;
-
-const userSchema = new Schema({
+const userSchema = new mongoose.Schema({
 	name: String,
 	id: Number,
-	avatar: {type: String, default: 'default.jpg'},
-})
+	avatar: { type: String, default: 'default.jpg' },
+});
 
-userSchema.index({id: 1})
+userSchema.index({ id: 1 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-export default User
+export default User;

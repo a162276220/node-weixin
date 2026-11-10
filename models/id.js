@@ -1,24 +1,29 @@
-'use strict';
+import mongoose from 'mongoose';
 
-import mongoose from 'mongoose'
-const Schema = mongoose.Schema;
+const counterSchema = new mongoose.Schema(
+	{
+		_id: String,
+		seq: { type: Number, default: 0 },
+	},
+	{ versionKey: false }
+);
 
-const idSchema = new Schema({
-	user_id: Number,
-	chat_id: Number,
-})
+const Counter =
+	mongoose.models.Counter || mongoose.model('Counter', counterSchema, 'counters');
 
-idSchema.index({id: 1})
+/**
+ * 原子自增。旧实现是 findOne → ++ → save，并发下必然产生重复 ID。
+ */
+export async function nextId(name) {
+	const doc = await Counter.findOneAndUpdate(
+		{ _id: name },
+		{ $inc: { seq: 1 } },
+		{ new: true, upsert: true, setDefaultsOnInsert: true }
+	);
+	return doc.seq;
+}
 
-const ID = mongoose.model('ID', idSchema);
+export const nextUserId = () => nextId('user_id');
+export const nextChatId = () => nextId('chat_id');
 
-ID.findOne((err, data) => {
-	if (!data) {
-		ID.create({
-			user_id: 0,
-			chat_id: 0,
-		})
-	}
-})
-
-export default ID
+export default Counter;

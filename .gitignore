@@ -1,5 +1,7 @@
-npm-debug.log
 node_modules
+npm-debug.log*
 coverage
-package-lock.json
+logs/*.log
 .DS_Store
+.env
+.env.local
